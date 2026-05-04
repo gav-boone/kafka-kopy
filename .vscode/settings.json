@@ -1,7 +1,8 @@
 {
-    "terminal.integrated.env.windows": {
-        "JAVA_HOME": "C:\\Users\\GBOONE\\AppData\\Local\\Programs\\Eclipse Adoptium\\jdk-17.0.19.10-hotspot",
-        "PATH": "C:\\Users\\GBOONE\\apache-maven-3.9.15\\bin;C:\\Users\\GBOONE\\AppData\\Local\\Programs\\Eclipse Adoptium\\jdk-17.0.19.10-hotspot\\bin;${env:PATH}"
-    },
-    "java.jdt.ls.java.home": "C:\\Users\\GBOONE\\AppData\\Local\\Programs\\Eclipse Adoptium\\jdk-17.0.19.10-hotspot"
+  "terminal.integrated.env.windows": {
+    "JAVA_HOME": "C:\\Users\\GBOONE\\AppData\\Local\\Programs\\Eclipse Adoptium\\jdk-17.0.19.10-hotspot",
+    "PATH": "C:\\Users\\GBOONE\\apache-maven-3.9.15\\bin;C:\\Users\\GBOONE\\AppData\\Local\\Programs\\Eclipse Adoptium\\jdk-17.0.19.10-hotspot\\bin;${env:PATH}"
+  },
+  "java.jdt.ls.java.home": "C:\\Users\\GBOONE\\AppData\\Local\\Programs\\Eclipse Adoptium\\jdk-17.0.19.10-hotspot",
+  "java.configuration.updateBuildConfiguration": "automatic"
 }
