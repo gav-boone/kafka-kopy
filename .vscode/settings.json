@@ -4,5 +4,6 @@
     "PATH": "C:\\Users\\GBOONE\\apache-maven-3.9.15\\bin;C:\\Users\\GBOONE\\AppData\\Local\\Programs\\Eclipse Adoptium\\jdk-17.0.19.10-hotspot\\bin;${env:PATH}"
   },
   "java.jdt.ls.java.home": "C:\\Users\\GBOONE\\AppData\\Local\\Programs\\Eclipse Adoptium\\jdk-17.0.19.10-hotspot",
-  "java.configuration.updateBuildConfiguration": "automatic"
+  "java.configuration.updateBuildConfiguration": "automatic",
+  "java.format.settings.url": ".vscode/java-formatter.xml"
 }

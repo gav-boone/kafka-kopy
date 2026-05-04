@@ -34,8 +34,10 @@ public class BrokerInfo {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj == null || getClass() != obj.getClass()) return false;
+        if (this == obj)
+            return true;
+        if (obj == null || getClass() != obj.getClass())
+            return false;
 
         BrokerInfo other = (BrokerInfo) obj;
         return id == other.id;
