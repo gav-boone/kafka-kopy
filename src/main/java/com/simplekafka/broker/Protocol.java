@@ -77,4 +77,47 @@ public class Protocol {
             .flip();
         return buf;
     }
+
+    // Decode Response Methods
+    public static ProduceResult decodeProduceResponse(ByteBuffer buf) {
+        byte responseType = buf.get();
+        if (responseType != PRODUCE_RESPONSE) {
+            if (responseType == ERROR_RESPONSE) {
+                short errorLength = buf.getShort();
+                byte[] errorBytes = new byte[errorLength];
+                buf.get(errorBytes);
+                String error = new String(errorBytes);
+                return new ProduceResult(-1, error);
+            }
+            return new ProduceResult(-1, "Invalid response type");
+        }
+
+        long offset = buf.getLong();
+        byte status = buf.get();
+
+        return new ProduceResult(offset, status == 0 ? null : "Produce failed");
+    }
+
+    // Response Classes
+    public static class ProduceResult {
+        private final long offset;
+        private final String error;
+
+        public ProduceResult(long offset, String error) {
+            this.offset = offset;
+            this.error = error;
+        }
+
+        public long getOffset() {
+            return offset;
+        }
+
+        public String getError() {
+            return error;
+        }
+
+        public boolean isSuccess() {
+            return error == null;
+        }
+    }
 }
