@@ -1,6 +1,7 @@
 package com.simplekafka.broker;
 
 import java.nio.ByteBuffer;
+import java.util.List;
 
 public class Protocol {
     // Client request types
@@ -136,6 +137,34 @@ public class Protocol {
 
         public int getMessageCount() {
             return messages.length;
+        }
+
+        public String getError() {
+            return error;
+        }
+
+        public boolean isSuccess() {
+            return error == null;
+        }
+    }
+
+    public static class MetadataResult {
+        private final List<BrokerInfo> brokers;
+        private final List<TopicMetadata> topics;
+        private final String error;
+
+        public MetadataResult(List<BrokerInfo> brokers, List<TopicMetadata> topics, String error) {
+            this.brokers = brokers;
+            this.topics = topics;
+            this.error = error;
+        }
+
+        public List<BrokerInfo> getBrokers() {
+            return brokers;
+        }
+
+        public List<TopicsMetadata> getTopics() {
+            return topics;
         }
 
         public String getError() {
