@@ -120,4 +120,30 @@ public class Protocol {
             return error == null;
         }
     }
+
+    public static class FetchResult {
+        private final byte[][] messages;
+        private final String error;
+
+        public FetchResult(byte[][] messages, String error) {
+            this.messages = messages;
+            this.error = error;
+        }
+
+        public byte[][] getMessages() {
+            return messages;
+        }
+
+        public int getMessageCount() {
+            return messages.length;
+        }
+
+        public String getError() {
+            return error;
+        }
+
+        public boolean isSuccess() {
+            return error == null;
+        }
+    }
 }
