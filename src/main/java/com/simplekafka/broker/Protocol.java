@@ -21,13 +21,12 @@ public class Protocol {
     public static final byte REPLICATE_ACK = 0x22;
     public static final byte TOPIC_NOTIF = 0x23;
 
+    // Encode Request Methods
     public static ByteBuffer encodeProduceRequest(String topic, int partition, byte[] message) {
         /**
-        * Request Type (1) + 
-        * topic string len (2) + Topic string (n) + 
-        * Partition (4) +
-        * message len (4) + message (n)
-        */
+         * Request Type (1) + topic string len (2) + Topic string (n) + Partition (4) +
+         * message len (4) + message (n)
+         */
         ByteBuffer buf = ByteBuffer.allocate(11 + topic.length() + message.length);
         buf
             .put(PRODUCE)
@@ -41,11 +40,9 @@ public class Protocol {
 
     public static ByteBuffer encodeFetchRequest(String topic, int partition, long offset, int maxBytes) {
         /**
-        * Request Type (1) + 
-        * topic string len (2) + Topic string (n) + 
-        * Partition (4) +
-        * offset (8) + maxBytes (4)
-        */
+         * Request Type (1) + topic string len (2) + Topic string (n) + Partition (4) +
+         * offset (8) + maxBytes (4)
+         */
         ByteBuffer buf = ByteBuffer.allocate(19 + topic.length());
         buf
             .put(FETCH)
@@ -54,6 +51,29 @@ public class Protocol {
             .putInt(partition)
             .putLong(offset)
             .putInt(maxBytes)
+            .flip();
+        return buf;
+    }
+
+    public static ByteBuffer encodeMetadataRequest() {
+        // Just request type (1)
+        ByteBuffer buf = ByteBuffer.allocate(1);
+        buf.put(METADATA).flip();
+        return buf;
+    }
+
+    public static ByteBuffer encodeCreateTopicRequest(String topic, int numPartitions, short replicationFactor) {
+        /**
+         * Request Type (1) + topic string len (2) + Topic string (n) + numPartition (4)
+         * + replicationFactor(2)
+         */
+        ByteBuffer buf = ByteBuffer.allocate(9 + topic.length());
+        buf
+            .put(CREATE_TOPIC)
+            .putShort((short) topic.length())
+            .put(topic.getBytes())
+            .putInt(numPartitions)
+            .putShort(replicationFactor)
             .flip();
         return buf;
     }
