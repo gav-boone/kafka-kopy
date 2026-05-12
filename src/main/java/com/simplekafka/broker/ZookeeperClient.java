@@ -13,7 +13,6 @@ import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.AsyncCallback.ChildrenCallback;
 import org.apache.zookeeper.data.Stat;
 
 public class ZookeeperClient implements Watcher {
@@ -73,6 +72,50 @@ public class ZookeeperClient implements Watcher {
         }
     }
 
+    public boolean exists(String path) throws KeeperException, InterruptedException {
+        Stat stat = zooKeeper.exists(path, false);
+        return stat != null;
+    }
+
+    public String getData(String path) throws KeeperException, InterruptedException {
+        byte[] data = zooKeeper.getData(path, false, null);
+        return new String(data);
+    }
+
+    public void setData(String path, String data) throws KeeperException, InterruptedException {
+        zooKeeper.setData(path, data.getBytes(), -1);
+    }
+
+    public List<String> getChildren(String path) throws KeeperException, InterruptedException {
+        try {
+            return zooKeeper.getChildren(path, false);
+        } catch (KeeperException.NoNodeException e) {
+            return new ArrayList<>();
+        }
+    }
+
+    private void createPath(String path) {
+        try {
+            if (path.equals("/")) {
+                return;
+            }
+
+            int lastSlashIndex = path.lastIndexOf('/');
+            if (lastSlashIndex > 0) {
+                // create parent path recursively
+                String parentPath = path.substring(0, lastSlashIndex);
+                createPath(parentPath);
+            }
+
+            if (zooKeeper.exists(path, false) == null) {
+                zooKeeper.create(path, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                LOGGER.info("Created ZooKeeper path: " + path);
+            }
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Failed to creat path: " + path, e);
+        }
+    }
+
     public void watchChildren(String path, ChildrenCallback callback) {
         try {
             List<String> children = zooKeeper.getChildren(path, event -> {
@@ -93,35 +136,57 @@ public class ZookeeperClient implements Watcher {
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error processing children changed event", e);
         }
+    }
 
-        private void createPath(String path) {
+    public void watchNode(String path, NodeCallback callback) {
+        try {
+            zooKeeper.exists(path, event -> {
+                if (event.getType() == Watcher.Event.EventType.NodeDeleted
+                        || event.getType() == Watcher.Event.EventType.NodeDataChanged
+                        || event.getType() == Watcher.Event.EventType.NodeCreated) {
+                    callback.onNodeChanged();
+                }
+            });
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Failed to watch node: " + path, e);
+        }
+    }
+
+    public void deleteNode(String path) throws KeeperException, InterruptedException {
+        if (exists(path)) {
+            zooKeeper.delete(path, 1);
+            LOGGER.info("Deleted node: " + path);
+        }
+    }
+
+    @Override
+    public void process(WatchedEvent event) {
+        if (event.getState() == Event.KeeperState.SyncConnected) {
+            connectedSignal.countDown();
+            LOGGER.info("Connected to ZooKeeper");
+        } else if (event.getState() == Event.KeeperState.Disconnected) {
+            LOGGER.warning("Disconnected from ZooKeeper");
+        } else if (event.getState() == Event.KeeperState.Expired) {
+            LOGGER.warning("ZooKeeper session expired, reconnecting...");
             try {
-                if (path.equals("/")) {
-                    return;
+                if (zooKeeper != null) {
+                    zooKeeper.close();
                 }
-
-                int lastSlashIndex = path.lastIndexOf('/');
-                if (lastSlashIndex > 0) {
-                    //create parent path recursively
-                    String parentPath = path.substring(0, lastSlashIndex);
-                    createPath(parentPath);
-                }
-
-                if (zooKeeper.exists(path, false) == null) {
-                    zooKeeper.create(path, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-                    LOGGER.info("Created ZooKeeper path: " + path);
-                }
+                connectedSignal = new CountDownLatch(1);
+                zooKeeper = new ZooKeeper(getConnectString(), SESSION_TIMEOUT, this);
+                connectedSignal.await();
+                LOGGER.info("Reconnected to Zookeeper after session expiry");
             } catch (Exception e) {
-                LOGGER.log(Level.WARNING, "Failed to creat path: " + path, e);
+                LOGGER.log(Level.SEVERE, "Failed to reconnect to ZooKeeper", e);
             }
         }
+    }
 
-        public interface ChildrenCallback {
-            void onChildrenChanged(List<String> children);
-        }
+    public interface ChildrenCallback {
+        void onChildrenChanged(List<String> children);
+    }
 
-        public interface NodeCallback {
-            void onNodeChanged();
-        }
+    public interface NodeCallback {
+        void onNodeChanged();
     }
 }
