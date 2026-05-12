@@ -13,6 +13,7 @@ import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.AsyncCallback.ChildrenCallback;
 import org.apache.zookeeper.data.Stat;
 
 public class ZookeeperClient implements Watcher {
@@ -46,6 +47,81 @@ public class ZookeeperClient implements Watcher {
     public void close() throws InterruptedException {
         if (zooKeeper != null) {
             zooKeeper.close();
+        }
+    }
+
+    public void createPersistingNodes(String path, String data) throws KeeperException, InterruptedException {
+        Stat stat = zooKeeper.exists(path, false);
+        if (stat == null) {
+            zooKeeper.create(path, data.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+            LOGGER.info("Created persistent node: " + path);
+        } else {
+            zooKeeper.setData(path, data.getBytes(), -1);
+            LOGGER.info("Updated persistent node: " + path);
+        }
+    }
+
+    public boolean createEphemeralNode(String path, String data) throws KeeperException, InterruptedException {
+        Stat stat = zooKeeper.exists(path, false);
+        if (stat == null) {
+            zooKeeper.create(path, data.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+            LOGGER.info("Created ephemeral node: " + path);
+            return true;
+        } else {
+            LOGGER.info("Ephemeral node already exists: " + path);
+            return false;
+        }
+    }
+
+    public void watchChildren(String path, ChildrenCallback callback) {
+        try {
+            List<String> children = zooKeeper.getChildren(path, event -> {
+                if (event.getType() == Watcher.Event.EventType.NodeChildrenChanged) {
+                    try {
+                        List<String> newChildren = zooKeeper.getChildren(path, event2 -> {
+                            if (event2.getType() == Watcher.Event.EventType.NodeChildrenChanged) {
+                                watchChildren(path, callback);
+                            }
+                        });
+                        callback.onChildrenChanged(newChildren);
+                    } catch (Exception e) {
+                        LOGGER.log(Level.SEVERE, "Error processing children changed event", e);
+                    }
+                }
+            });
+            callback.onChildrenChanged(children);
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error processing children changed event", e);
+        }
+
+        private void createPath(String path) {
+            try {
+                if (path.equals("/")) {
+                    return;
+                }
+
+                int lastSlashIndex = path.lastIndexOf('/');
+                if (lastSlashIndex > 0) {
+                    //create parent path recursively
+                    String parentPath = path.substring(0, lastSlashIndex);
+                    createPath(parentPath);
+                }
+
+                if (zooKeeper.exists(path, false) == null) {
+                    zooKeeper.create(path, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                    LOGGER.info("Created ZooKeeper path: " + path);
+                }
+            } catch (Exception e) {
+                LOGGER.log(Level.WARNING, "Failed to creat path: " + path, e);
+            }
+        }
+
+        public interface ChildrenCallback {
+            void onChildrenChanged(List<String> children);
+        }
+
+        public interface NodeCallback {
+            void onNodeChanged();
         }
     }
 }
