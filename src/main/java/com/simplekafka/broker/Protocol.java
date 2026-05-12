@@ -149,7 +149,7 @@ public class Protocol {
         byte[][] messages = new byte[messageCount][];
 
         for (int i = 0; i < messageCount; i++) {
-            long offset = buf.getLong();
+            buf.getLong();
             int messageSize = buf.getInt();
             messages[i] = new byte[messageSize];
             buf.get(messages[i]);
