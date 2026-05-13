@@ -284,6 +284,9 @@ public class Partition {
 
                             position = 0;
                             nextLogChannel.position(position);
+
+                            nextLogFile.close();
+                            nextLogChannel.close();
                         }
                     }
                 }
